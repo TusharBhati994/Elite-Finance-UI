@@ -42,11 +42,12 @@ const [targetPrice, setTargetPrice] = useState("");
       </div>
 
       {/* Order Entry */}
-    <div className="w-80 p-4 border-r border-slate-800/60 flex flex-col justify-center overflow-y-auto">
+    <div className="w-80 p-4 border-r border-slate-800/60 flex flex-col justify-start overflow-y-auto">
          <div className="flex items-center justify-between mb-4">
            <span className="text-sm font-bold text-slate-300 font-mono">{activeTicker}</span>
            <span className="text-sm font-bold text-slate-300 font-mono">${simulatedPrice?.toFixed(2) || "---.--"}</span>
          </div>
+      <div className="flex items-center justify-between mb-4">
          <div className="mb-4">
 
   <input
@@ -96,7 +97,7 @@ const [targetPrice, setTargetPrice] = useState("");
       </div>
 
       {/* P&L Equity Curve Chart */}
-      <div className="w-72 p-3 border-r border-slate-800/60 flex flex-col justify-center">
+      <div className="w-72 p-4 border-r border-slate-800/60 flex flex-col justify-start">
         <PnLChart history={pnlHistory} />
       </div>
 
