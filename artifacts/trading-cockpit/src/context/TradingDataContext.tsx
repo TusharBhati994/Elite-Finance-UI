@@ -14,6 +14,11 @@ export type Portfolio = {
   positions: Position[];
 };
 
+export type PnLSnapshot = {
+  time: number;
+  equity: number;
+};
+
 export type Metrics = {
   price: number;
   open: number;
@@ -38,6 +43,7 @@ type TradingDataState = {
   simulatedPrice: number | null;
   priceFlash: "up" | "down" | "none";
   portfolio: Portfolio;
+  pnlHistory: PnLSnapshot[];
   alerts: { targetPrice: number | null; triggered: boolean };
   showEMA: boolean;
   showVWAP: boolean;
@@ -71,6 +77,7 @@ export const TradingDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [simulatedPrice, setSimulatedPrice] = useState<number | null>(null);
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | "none">("none");
   const [portfolio, setPortfolio] = useState<Portfolio>({ cash: 100000, positions: [] });
+  const [pnlHistory, setPnlHistory] = useState<PnLSnapshot[]>([{ time: Date.now(), equity: 100000 }]);
   const [alerts, setAlerts] = useState<{ targetPrice: number | null; triggered: boolean }>({ targetPrice: null, triggered: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,11 +192,24 @@ export const TradingDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setTimeout(() => setPriceFlash("none"), 600);
         }
         prevPriceRef.current = next;
+        // Record equity snapshot for P&L chart
+        setPortfolio((port) => {
+          const unrealized = port.positions.reduce((acc, pos) => {
+            const livePrice = pos.ticker === activeTicker ? next : pos.entryPrice;
+            return acc + (livePrice - pos.entryPrice) * pos.qty * (pos.direction === "LONG" ? 1 : -1);
+          }, 0);
+          const equity = port.cash + unrealized;
+          setPnlHistory((h) => {
+            const updated = [...h, { time: Date.now(), equity }];
+            return updated.length > 240 ? updated.slice(-240) : updated;
+          });
+          return port;
+        });
         return next;
       });
     }, 2500);
     return () => clearInterval(id);
-  }, []);
+  }, [activeTicker]);
 
   // Price alert check
   useEffect(() => {
@@ -306,7 +326,7 @@ export const TradingDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     chartData, metrics,
     emaData, rsiData, bollingerBandsData, macdData, vwapData,
     simulatedPrice, priceFlash,
-    portfolio, alerts,
+    portfolio, pnlHistory, alerts,
     showEMA, showVWAP, showBollinger, showRSI, showMACD,
     loading, error,
     setActiveTicker, setActiveInterval, setActivePeriod,

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useTradingData } from "../context/TradingDataContext";
+import PnLChart from "./PnLChart";
 
 export default function PaperTrading() {
-  const { portfolio, activeTicker, simulatedPrice, executeTrade, closePosition } = useTradingData();
+  const { portfolio, pnlHistory, activeTicker, simulatedPrice, executeTrade, closePosition } = useTradingData();
   const [qty, setQty] = useState<string>("100");
 
   const totalPnL = portfolio.positions.reduce((acc, pos) => {
@@ -69,6 +70,11 @@ export default function PaperTrading() {
              SELL
            </button>
          </div>
+      </div>
+
+      {/* P&L Equity Curve Chart */}
+      <div className="w-72 p-3 border-r border-slate-800/60 flex flex-col justify-center">
+        <PnLChart history={pnlHistory} />
       </div>
 
       {/* Open Positions */}
