@@ -141,7 +141,8 @@ export const TradingDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLoading(true);
     setError(null);
     try {
-      const url = `/api/market/chart?symbol=${encodeURIComponent(activeTicker)}&interval=${activeInterval}&period=${activePeriod}`;
+      const apiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+      const url = `${apiBase}/api/market/chart?symbol=${encodeURIComponent(activeTicker)}&interval=${activeInterval}&period=${activePeriod}`;
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
