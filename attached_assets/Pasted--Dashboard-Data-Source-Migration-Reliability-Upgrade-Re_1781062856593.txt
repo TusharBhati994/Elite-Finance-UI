@@ -1,0 +1,256 @@
+# Dashboard Data Source Migration & Reliability Upgrade
+
+Replace the current Alpha Vantage integration completely with Yahoo Finance (yfinance).
+
+## Primary Goal
+
+Eliminate Alpha Vantage rate-limit issues and ensure the dashboard loads reliably on first launch without showing "No data returned" errors.
+
+---
+
+## 1. Remove Alpha Vantage Completely
+
+Remove all Alpha Vantage-related code, including:
+
+* API keys
+* API endpoints
+* Rate-limit handling
+* Retry logic specific to Alpha Vantage
+* Any references to the 25 requests/day limitation
+* Any user-facing messages mentioning Alpha Vantage
+
+The dashboard should no longer depend on Alpha Vantage in any way.
+
+---
+
+## 2. Use Yahoo Finance (yfinance)
+
+Use:
+
+```python
+import yfinance as yf
+```
+
+Create a dedicated market data service layer.
+
+Example:
+
+```python
+ticker = yf.Ticker(symbol)
+data = ticker.history(period=period, interval=interval)
+```
+
+---
+
+## 3. Supported Timeframes
+
+Support the following intervals:
+
+* 1m
+* 2m
+* 5m
+* 15m
+* 30m
+* 60m
+* 1d
+
+Support the following periods:
+
+* 1d
+* 5d
+* 1mo
+* 3mo
+* 6mo
+* 1y
+
+Make these selectable from the UI.
+
+---
+
+## 4. Implement Intelligent Caching
+
+If using Streamlit:
+
+```python
+@st.cache_data(ttl=60)
+def get_stock_data(symbol, period, interval):
+    ...
+```
+
+Requirements:
+
+* Cache market data for 60 seconds
+* Avoid duplicate requests
+* Reuse cached results whenever possible
+* Reduce API load
+* Improve dashboard speed
+
+---
+
+## 5. Add Robust Retry Logic
+
+Implement automatic retries:
+
+```python
+for attempt in range(3):
+    try:
+        ...
+        break
+    except Exception:
+        time.sleep(2)
+```
+
+Requirements:
+
+* Retry up to 3 times
+* Wait between retries
+* Log failures
+* Prevent crashes
+
+---
+
+## 6. Improve Error Handling
+
+Never display:
+
+"No data returned"
+
+Never display raw exceptions to users.
+
+Instead display friendly messages such as:
+
+* "Loading market data..."
+* "Unable to fetch market data. Retrying..."
+* "Market data temporarily unavailable."
+* "Please try again in a few moments."
+
+If the returned dataframe is empty:
+
+```python
+if data.empty:
+    handle_gracefully()
+```
+
+The dashboard must never crash because of missing market data.
+
+---
+
+## 7. First Load Reliability
+
+Requirements:
+
+* Automatically fetch default ticker data on first load
+* Do not require user interaction to trigger loading
+* Ensure candlestick charts render immediately when data is available
+* Prevent blank charts on startup
+
+---
+
+## 8. Preserve Existing Dashboard Features
+
+Do NOT remove or alter any existing functionality.
+
+Keep:
+
+* Candlestick charts
+* Technical indicators
+* Portfolio section
+* Watchlists
+* Search functionality
+* Volume charts
+* Performance analytics
+* UI styling
+* Theme settings
+* Navigation
+* Existing layouts
+
+Only replace the market data source layer.
+
+---
+
+## 9. Performance Optimization
+
+Implement the following:
+
+* Avoid duplicate API calls
+* Lazy-load non-visible components
+* Cache frequently requested tickers
+* Reuse existing data where possible
+* Reduce page refresh delays
+* Minimize loading times
+* Optimize chart rendering performance
+
+---
+
+## 10. Logging & Debugging
+
+Add proper logging:
+
+```python
+logging.info(...)
+logging.warning(...)
+logging.error(...)
+```
+
+Log:
+
+* Data fetch attempts
+* Failed requests
+* Retry attempts
+* Empty responses
+* Cache hits
+* Cache misses
+
+Keep logs developer-friendly.
+
+---
+
+## 11. Code Quality Requirements
+
+Refactor into a production-quality structure:
+
+* Separate data layer
+* Separate chart layer
+* Separate UI layer
+* Modular functions
+* Clear naming conventions
+* Proper comments
+* Exception handling
+* Maintainable architecture
+
+The final code should be suitable for a professional portfolio project.
+
+---
+
+## 12. Live Data Consideration
+
+If the dashboard is intended to display live candlesticks updating every few seconds, evaluate whether yfinance is sufficient.
+
+Important:
+
+* yfinance is excellent for analysis dashboards, portfolio tracking, research tools, and quant projects.
+* yfinance is NOT true tick-by-tick real-time market data.
+* If the dashboard requires genuine live streaming candles or second-by-second updates, migrate the live data layer to a WebSocket-based market data provider or broker API.
+
+Examples:
+
+* Broker WebSocket APIs
+* Exchange WebSocket feeds
+* Streaming market data providers
+
+For standard portfolio, quant research, educational, and internship projects, yfinance is acceptable and preferred due to simplicity and reliability.
+
+---
+
+## Expected Final Result
+
+Build a reliable, production-ready stock dashboard that:
+
+* Loads successfully on first launch
+* Never depends on Alpha Vantage
+* Does not suffer from rate-limit failures
+* Uses yfinance as the primary data source
+* Includes caching and retry mechanisms
+* Maintains all existing dashboard functionality
+* Provides a smooth user experience
+* Is suitable for showcasing in internships, interviews, and portfolio projects

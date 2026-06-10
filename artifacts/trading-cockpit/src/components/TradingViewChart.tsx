@@ -15,11 +15,14 @@ import { Settings2 } from "lucide-react";
 
 export default function TradingViewChart() {
   const { 
-    chartData, activeInterval, setActiveInterval, 
+    chartData, activeInterval, setActiveInterval, activePeriod, setActivePeriod,
     emaData, vwapData, bollingerBandsData, rsiData, macdData,
     showEMA, showVWAP, showBollinger, showRSI, showMACD, setIndicatorVisibility,
     alerts
   } = useTradingData();
+
+  const INTERVALS = ["1m", "2m", "5m", "15m", "30m", "60m", "1d"];
+  const PERIODS = ["1d", "5d", "1mo", "3mo", "6mo", "1y"];
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const rsiContainerRef = useRef<HTMLDivElement>(null);
@@ -227,49 +230,72 @@ export default function TradingViewChart() {
     <div className="flex-1 flex flex-col overflow-hidden relative">
       {/* Toolbar */}
       <div className="h-10 bg-[#080b12] border-b border-slate-800/60 flex items-center justify-between px-3 z-10 shrink-0">
-        <div className="flex items-center gap-1">
-          {["1min", "5min", "15min", "60min"].map(int => (
+        <div className="flex items-center gap-0.5">
+          {/* Interval buttons */}
+          {INTERVALS.map(iv => (
             <button
-              key={int}
-              onClick={() => setActiveInterval(int)}
-              className={`px-3 py-1 text-xs font-mono rounded transition-colors ${
-                activeInterval === int 
-                  ? "bg-slate-800 text-emerald-400 border border-emerald-500/50" 
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              key={iv}
+              data-testid={`btn-interval-${iv}`}
+              onClick={() => setActiveInterval(iv)}
+              className={`px-2.5 py-1 text-xs font-mono rounded transition-colors ${
+                activeInterval === iv
+                  ? "bg-slate-800 text-emerald-400 border border-emerald-500/50"
+                  : "text-slate-500 hover:text-slate-200 hover:bg-slate-800/50"
               }`}
             >
-              {int.replace("min", "m")}
+              {iv}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-slate-700 mx-1.5" />
+          {/* Period buttons */}
+          {PERIODS.map(p => (
+            <button
+              key={p}
+              data-testid={`btn-period-${p}`}
+              onClick={() => setActivePeriod(p)}
+              className={`px-2.5 py-1 text-xs font-mono rounded transition-colors ${
+                activePeriod === p
+                  ? "bg-slate-800 text-sky-400 border border-sky-500/50"
+                  : "text-slate-500 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              {p}
             </button>
           ))}
         </div>
-        
+
         <div className="relative">
-          <button 
+          <button
+            data-testid="btn-studies"
             onClick={() => setStudiesOpen(!studiesOpen)}
-            className="flex items-center gap-2 px-3 py-1 text-xs font-mono text-slate-300 hover:bg-slate-800/50 rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono text-slate-300 hover:bg-slate-800/50 rounded transition-colors"
           >
             <Settings2 className="w-3 h-3" />
             Studies
           </button>
-          
+
           {studiesOpen && (
             <div className="absolute right-0 top-full mt-1 bg-slate-900 border border-slate-800 rounded shadow-xl p-2 w-48 z-50">
-              <label className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
-                <input type="checkbox" checked={showEMA} onChange={e => setIndicatorVisibility("EMA", e.target.checked)} className="accent-emerald-500" /> EMA 20
-              </label>
-              <label className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
-                <input type="checkbox" checked={showVWAP} onChange={e => setIndicatorVisibility("VWAP", e.target.checked)} className="accent-emerald-500" /> VWAP
-              </label>
-              <label className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
-                <input type="checkbox" checked={showBollinger} onChange={e => setIndicatorVisibility("Bollinger", e.target.checked)} className="accent-emerald-500" /> Bollinger Bands
-              </label>
-              <div className="h-px bg-slate-800 my-1"></div>
-              <label className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
-                <input type="checkbox" checked={showRSI} onChange={e => setIndicatorVisibility("RSI", e.target.checked)} className="accent-emerald-500" /> RSI 14
-              </label>
-              <label className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
-                <input type="checkbox" checked={showMACD} onChange={e => setIndicatorVisibility("MACD", e.target.checked)} className="accent-emerald-500" /> MACD
-              </label>
+              {[
+                { label: "EMA 20", key: "EMA", val: showEMA },
+                { label: "VWAP", key: "VWAP", val: showVWAP },
+                { label: "Bollinger Bands", key: "Bollinger", val: showBollinger },
+              ].map(({ label, key, val }) => (
+                <label key={key} className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
+                  <input type="checkbox" checked={val} onChange={e => setIndicatorVisibility(key, e.target.checked)} className="accent-emerald-500" />
+                  {label}
+                </label>
+              ))}
+              <div className="h-px bg-slate-800 my-1" />
+              {[
+                { label: "RSI 14", key: "RSI", val: showRSI },
+                { label: "MACD", key: "MACD", val: showMACD },
+              ].map(({ label, key, val }) => (
+                <label key={key} className="flex items-center gap-2 p-1.5 hover:bg-slate-800 rounded cursor-pointer text-xs font-mono text-slate-300">
+                  <input type="checkbox" checked={val} onChange={e => setIndicatorVisibility(key, e.target.checked)} className="accent-emerald-500" />
+                  {label}
+                </label>
+              ))}
             </div>
           )}
         </div>
