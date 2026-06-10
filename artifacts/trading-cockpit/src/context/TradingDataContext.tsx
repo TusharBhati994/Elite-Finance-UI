@@ -149,8 +149,16 @@ export const TradingDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setError(null);
     try {
       const apiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
-      const url = `${apiBase}/api/market/chart?symbol=${encodeURIComponent(activeTicker)}&interval=${activeInterval}&period=${activePeriod}`;
-      const res = await fetch(url);
+
+// Fix for 1d interval + 1d period showing only 1 candle
+const effectivePeriod =
+  activeInterval === "1d" && activePeriod === "1d"
+    ? "1y"
+    : activePeriod;
+
+const url = `${apiBase}/api/market/chart?symbol=${encodeURIComponent(activeTicker)}&interval=${activeInterval}&period=${effectivePeriod}`;
+
+const res = await fetch(url);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const msg = (body as any)?.error ?? "Market data temporarily unavailable.";
