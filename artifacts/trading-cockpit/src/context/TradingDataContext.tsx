@@ -7,6 +7,9 @@ export type Position = {
   direction: "LONG" | "SHORT";
   qty: number;
   entryPrice: number;
+
+  stopLoss?: number | null;
+  targetPrice?: number | null;
 };
 
 export type Portfolio = {
