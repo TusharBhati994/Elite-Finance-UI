@@ -1,0 +1,71 @@
+You are an elite Frontend Architect and Financial UI/UX engineer. Your task is to build a high-performance, real-time institutional trading cockpit using React, Tailwind CSS, and @tradingview/lightweight-charts.
+ 
+The entire system must run off an ultra-clean, dark aesthetic layout (bg-[#0c0d14], h-screen, overflow-hidden, select-none) and connect to a single source of data truth via the React Context API.
+ 
+---
+ 
+### 1. API & Core Orchestration Layer (TradingDataContext.jsx)
+- **Authentication:** Hardcode the Alpha Vantage API Key: "LLAAVIACFHKP15CI".
+- **Global State Variables:** Track active parameters across the application, including: `activeTicker` (default 'IBM'), `activeInterval` (default '1min'), `chartData`, `metrics`, `emaData`, `rsiData`, `bollingerBandsData`, `macdData`, `vwapData`, `simulatedPrice`, `portfolio`, `alerts`, and boolean visibility toggles for each technical indicator.
+- **Network Optimization & Rate-Limiting:** To prevent API key depletion, execute a real network fetch ONLY when `activeTicker` or `activeInterval` shifts, or when a strict 60-second polling interval ticks. 
+- **Micro-Tick Simulator:** Implement a background sub-interval running every 2.5 seconds. It must grab the latest API closing price and calculate a minor randomized fractional fluctuation (±0.03%) to populate `simulatedPrice`. This simulated price must act as the real-time heart of the terminal, updating the header badges, running price alert checks, and recalculating open paper trading positions continuously between the 60-second network updates.
+ 
+#### Data Parsing & Data Transformation Rules:
+When raw JSON data arrives from Alpha Vantage ("Time Series (1min)"), parse it simultaneously into multiple structures:
+1. **Chart Schema:** Sort historical timestamps chronologically. Convert time strings into UNIX epoch timestamps (seconds). Map prices to the structural format required by Lightweight Charts: `{ time: number, open: number, high: number, low: number, close: number }`.
+2. **Metrics Schema:** Isolate the absolute latest candle's dataset to expose properties for: `price` (current close), `open` (the initial opening price of the current dataset), `high` (the absolute peak across the active dataset), `low` (the absolute trough across the active dataset), and `volume` (sum of volume across the active dataset). Calculate `change` and `percentChange` relative to the dataset's initial open price.
+ 
+---
+ 
+### 2. Math Processing Engine (Technical Indicators)
+Configure an autonomous calculation module running directly inside the data provider layer that automatically parses the active chart array into secondary data indicators:
+- **EMA 20:** Calculate a 20-period Exponential Moving Average line using closing prices.
+- **VWAP Line:** Calculate an intraday Volume Weighted Average Price resetting at the start of each daily session based on cumulative price times volume divided by cumulative volume.
+- **Bollinger Bands:** Compute a 20-period SMA for the middle band, and calculate Upper/Lower boundary bands at 2 standard deviations.
+- **RSI 14:** Calculate a 14-period Relative Strength Index momentum oscillator array.
+- **MACD:** Compute the MACD Line (12 EMA - 26 EMA), Signal Line (9 EMA of the MACD line), and the relative divergence Histogram data.
+ 
+---
+ 
+### 3. Layout Architecture & Component Blueprints
+ 
+#### A. Global Layout (App.jsx)
+Establish a fixed fullscreen viewport wrapper (`h-screen w-screen bg-[#0c0d14] overflow-hidden`). Construct a grid or flex structural split map layout containing:
+- Top: Header Control bar (h-16).
+- Main Workspace Body: Flex row containing Left Sidebar (Watchlist), Center Main Panel (Chart + Toolbar + Paper Trading Bottom Panel), and Right Sidebar (Session Metrics Card Grid).
+ 
+#### B. Global Watchlist (Left Sidebar Component)
+- Layout Bounds: Width fixed to `w-64`, border-right color `border-slate-900`, background `bg-[#0c0d14]`.
+- Content: Render interactive vertical tracking rows for 5 assets: AAPL, TSLA, MSFT, AMZN, and IBM.
+- Each row element must feature the asset ticker text, a small last-known price string, and an isolated color-coded percentage change badge. Clicking any ticker row must instantly set `activeTicker`, clear old canvas drawings, and execute an immediate fresh API fetch request.
+ 
+#### C. Upgraded Chart Control Toolbar & Canvas (TradingViewChart.jsx)
+- **Top Chart Toolbar:** Place an interactive management strip directly above the main canvas element. 
+  - Left Section: Provide responsive clickable timeframe choice buttons: '1m', '5m', '15m', and '60m' tied directly to updating `activeInterval`.
+  - Right Section: Provide a "Studies/Indicators" button that opens a clean dropdown containing checkbox visibility states for: EMA 20, VWAP, Bollinger Bands, RSI 14, and MACD.
+- **Main Chart Container:** Anchor the lightweight-charts instance via a dedicated `useRef` hook. Initialize options with background color `#090d16`, grid lines `#131a2b`, and text elements `#94a3b8`.
+  - Append a `CandlestickSeries` for primary price tracking.
+  - *Conditional Overlays:* If toggled true, plot the corresponding line series overlays (EMA, VWAP, or the 3 Bollinger Band boundaries) perfectly on top of the candlesticks.
+- **Dynamic Sub-Pane Infrastructure (RSI & MACD):** If RSI or MACD are toggled true, programmatically shrink the main candlestick canvas area height and dynamically append independent subordinate chart panels directly beneath it. 
+  - Map RSI as a continuous LineSeries bounded by static horizontal markers plotted at 30 and 70 coordinates.
+  - Map MACD using `addHistogramSeries`, color-coding individual bars dynamically (emerald-green for rising positive momentum, rose-red for falling negative momentum).
+- **Canvas Responsiveness:** Contain all canvas bindings inside a native browser `ResizeObserver` script loop to automatically compute width/height parameters on window resizing. Clean up all components, sub-panes, and charts on unmount to avoid performance leaking.
+ 
+#### D. Virtual Portfolio Studio (Bottom Execution Pane)
+- Dock an execution tray to the bottom center region of the main panel dashboard frame.
+- Display a real-time account ledger showing: Virtual Cash Available (initialized to a starting balance of $100,000 USD).
+- Provide a clean transactional input terminal form consisting of: a numeric token quantity field, a green interactive 'BUY' action button, and a crimson 'SELL' action button.
+- Build an "Open Positions Ledger Table" parsing live active items showing: Ticker name, Direction (LONG/SHORT), Order Quantity, Average Entry Price, Live Market Price (continually fed by the Micro-Tick Simulator), and a floating P&L column that recalculates instantly on every tick. Include a single-click "Market Close" execution button to exit any active position.
+ 
+#### E. Header Widget & Smart Price Alerts
+- Display the active `activeTicker`, the running real-time simulated asset price badge, and net direction metrics.
+- *Dynamic Flash Styling:* Bind CSS transitions to the context's `priceFlash` state. Momentarily flash the main pricing badge background to light emerald green (`bg-emerald-950/50 border-emerald-500 text-emerald-400`) on positive variations or rose red (`bg-rose-950/50 border-rose-500 text-rose-400`) on negative micro-variations.
+- Provide a number input element accompanied by a bell icon button inside the header bar to "Set Price Alert".
+- Render a horizontal dashed indicator marker line across the main trading chart canvas at that designated trigger coordinate. If the incoming `simulatedPrice` ticks past or hits that exact metric value, fire an immediate floating web notification banner toast and play a subtle audio chime.
+ 
+---
+ 
+### 4. Technical Quality & Robustness Standards
+- Maintain complete code encapsulation across separate files.
+- Ensure all hooks clean up background polling loops, sub-pane observers, and chart canvases completely upon unmount.
+- Use explicit logical short-circuit verification criteria (e.g., `metrics?.price`) throughout all component tree templates to ensure safe rendering before initial API network payloads resolve.
