@@ -42,7 +42,7 @@ const [targetPrice, setTargetPrice] = useState("");
       </div>
 
       {/* Order Entry */}
-     <div className="w-64 p-4 border-r border-slate-800/60 flex flex-col justify-start">
+    <div className="w-64 p-4 border-r border-slate-800/60 flex flex-col justify-start overflow-y-auto">
          <div className="flex items-center justify-between mb-4">
            <span className="text-sm font-bold text-slate-300 font-mono">{activeTicker}</span>
            <span className="text-sm font-bold text-slate-300 font-mono">${simulatedPrice?.toFixed(2) || "---.--"}</span>
