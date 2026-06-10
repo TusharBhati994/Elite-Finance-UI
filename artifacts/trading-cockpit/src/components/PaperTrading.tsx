@@ -5,6 +5,8 @@ import PnLChart from "./PnLChart";
 export default function PaperTrading() {
   const { portfolio, pnlHistory, activeTicker, simulatedPrice, executeTrade, closePosition } = useTradingData();
   const [qty, setQty] = useState<string>("100");
+  const [stopLoss, setStopLoss] = useState("");
+const [targetPrice, setTargetPrice] = useState("");
 
   const totalPnL = portfolio.positions.reduce((acc, pos) => {
     // simplistic pnl, uses simulatedPrice if active ticker, else 0 change
@@ -45,15 +47,36 @@ export default function PaperTrading() {
            <span className="text-sm font-bold text-slate-300 font-mono">{activeTicker}</span>
            <span className="text-sm font-bold text-slate-300 font-mono">${simulatedPrice?.toFixed(2) || "---.--"}</span>
          </div>
-         <div className="flex items-center gap-2 mb-4">
-           <label className="text-xs text-slate-500 font-mono">QTY</label>
-           <input 
-             type="number" 
-             value={qty} 
-             onChange={e => setQty(e.target.value)}
-             className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded focus:outline-none focus:border-emerald-500 font-mono text-right"
-           />
-         </div>
+         <div className="mb-4">
+
+  <input
+    type="number"
+    placeholder="Stop Loss"
+    value={stopLoss}
+    onChange={(e) => setStopLoss(e.target.value)}
+    className="w-full bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded mb-2"
+  />
+
+  <input
+    type="number"
+    placeholder="Target Price"
+    value={targetPrice}
+    onChange={(e) => setTargetPrice(e.target.value)}
+    className="w-full bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded mb-2"
+  />
+
+  <div className="flex items-center gap-2">
+    <label className="text-xs text-slate-500 font-mono">QTY</label>
+
+    <input
+      type="number"
+      value={qty}
+      onChange={(e) => setQty(e.target.value)}
+      className="flex-1 bg-slate-900 border border-slate-700 text-slate-200 px-2 py-1 rounded"
+    />
+  </div>
+
+</div>
          <div className="flex gap-2">
            <button 
              onClick={() => handleTrade("buy")}
