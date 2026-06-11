@@ -43,7 +43,7 @@ type TradingDataState = {
   bollingerBandsData: { upper: LinePoint[]; middle: LinePoint[]; lower: LinePoint[] } | null;
   macdData: { macd: LinePoint[]; signal: LinePoint[]; histogram: { time: number; value: number; color: string }[] } | null;
   vwapData: LinePoint[];
-  simulatedPrice: number | null;
+  // simulatedPrice: number | null;
   priceFlash: "up" | "down" | "none";
   portfolio: Portfolio;
   pnlHistory: PnLSnapshot[];
