@@ -43,7 +43,7 @@ type TradingDataState = {
   bollingerBandsData: { upper: LinePoint[]; middle: LinePoint[]; lower: LinePoint[] } | null;
   macdData: { macd: LinePoint[]; signal: LinePoint[]; histogram: { time: number; value: number; color: string }[] } | null;
   vwapData: LinePoint[];
-  // simulatedPrice: number | null;
+  simulatedPrice: number | null;
   priceFlash: "up" | "down" | "none";
   portfolio: Portfolio;
   pnlHistory: PnLSnapshot[];
@@ -189,38 +189,38 @@ const res = await fetch(url);
   }, [fetchData]);
 
   // Micro-tick simulator — ±0.03% every 2.5 s
-  // useEffect(() => {
-  //   const id = setInterval(() => {
-  //     setSimulatedPrice((prev) => {
-  //       if (prev === null) return null;
-  //       const delta = prev * (Math.random() * 0.0006 - 0.0003);
-  //       const next = prev + delta;
-  //       if (next > (prevPriceRef.current ?? prev)) {
-  //         setPriceFlash("up");
-  //         setTimeout(() => setPriceFlash("none"), 600);
-  //       } else {
-  //         setPriceFlash("down");
-  //         setTimeout(() => setPriceFlash("none"), 600);
-  //       }
-  //       prevPriceRef.current = next;
-  //       // Record equity snapshot for P&L chart
-  //       setPortfolio((port) => {
-  //         const unrealized = port.positions.reduce((acc, pos) => {
-  //           const livePrice = pos.ticker === activeTicker ? next : pos.entryPrice;
-  //           return acc + (livePrice - pos.entryPrice) * pos.qty * (pos.direction === "LONG" ? 1 : -1);
-  //         }, 0);
-  //         const equity = port.cash + unrealized;
-  //         setPnlHistory((h) => {
-  //           const updated = [...h, { time: Date.now(), equity }];
-  //           return updated.length > 240 ? updated.slice(-240) : updated;
-  //         });
-  //         return port;
-  //       });
-  //       return next;
-  //     });
-  //   }, 2500);
-  //   return () => clearInterval(id);
-  // }, [activeTicker]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSimulatedPrice((prev) => {
+        if (prev === null) return null;
+        const delta = prev * (Math.random() * 0.0006 - 0.0003);
+        const next = prev + delta;
+        if (next > (prevPriceRef.current ?? prev)) {
+          setPriceFlash("up");
+          setTimeout(() => setPriceFlash("none"), 600);
+        } else {
+          setPriceFlash("down");
+          setTimeout(() => setPriceFlash("none"), 600);
+        }
+        prevPriceRef.current = next;
+        // Record equity snapshot for P&L chart
+        setPortfolio((port) => {
+          const unrealized = port.positions.reduce((acc, pos) => {
+            const livePrice = pos.ticker === activeTicker ? next : pos.entryPrice;
+            return acc + (livePrice - pos.entryPrice) * pos.qty * (pos.direction === "LONG" ? 1 : -1);
+          }, 0);
+          const equity = port.cash + unrealized;
+          setPnlHistory((h) => {
+            const updated = [...h, { time: Date.now(), equity }];
+            return updated.length > 240 ? updated.slice(-240) : updated;
+          });
+          return port;
+        });
+        return next;
+      });
+    }, 2500);
+    return () => clearInterval(id);
+  }, [activeTicker]);
 
   // Price alert check
   useEffect(() => {
